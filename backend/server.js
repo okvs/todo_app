@@ -132,8 +132,31 @@ app.put('/api/todos/reorder', (req, res) => {
   res.json({ success: true });
 });
 
-initDB().then(() => {
-  app.listen(3001, () => {
-    console.log('🚀 백엔드 서버 실행 중: http://localhost:3001');
+// 프로덕션: 빌드된 프론트엔드 정적 파일 서빙
+const frontendPath = path.join(__dirname, '..', 'frontend', 'dist');
+if (fs.existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(frontendPath, 'index.html'));
+    }
   });
-});
+}
+
+// 모듈로 사용될 때는 서버 시작 함수 export, 직접 실행시 바로 시작
+function startServer(port = 3001) {
+  return initDB().then(() => {
+    return new Promise(resolve => {
+      const server = app.listen(port, () => {
+        console.log(`🚀 서버 실행 중: http://localhost:${port}`);
+        resolve(server);
+      });
+    });
+  });
+}
+
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { startServer };
