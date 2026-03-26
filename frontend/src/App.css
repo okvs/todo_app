@@ -25,9 +25,48 @@ body {
 
 h1 {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 4px;
   font-size: 28px;
   color: #333;
+}
+
+.today-date {
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: #f0f0f0;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.tab {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab.active {
+  background: white;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tab:hover:not(.active) {
+  color: #555;
 }
 
 .input-form {
@@ -143,4 +182,15 @@ h1 {
   color: #888;
   margin-top: 16px;
   font-size: 14px;
+}
+
+.done-list li {
+  cursor: default;
+}
+
+.done-date {
+  font-size: 12px;
+  color: #aaa;
+  margin-right: 8px;
+  white-space: nowrap;
 }

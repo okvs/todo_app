@@ -28,16 +28,17 @@ async function initDB() {
       text TEXT NOT NULL,
       completed INTEGER DEFAULT 0,
       position INTEGER DEFAULT 0,
+      completed_at DATETIME DEFAULT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  // 기존 DB에 position 컬럼이 없으면 추가
-  try {
-    db.run('ALTER TABLE todos ADD COLUMN position INTEGER DEFAULT 0');
-  } catch (e) {
-    // 이미 존재하면 무시
-  }
+  // 기존 DB 마이그레이션
+  const addColumnSafe = (col, type, def) => {
+    try { db.run(`ALTER TABLE todos ADD COLUMN ${col} ${type} DEFAULT ${def}`); } catch(e) {}
+  };
+  addColumnSafe('position', 'INTEGER', '0');
+  addColumnSafe('completed_at', 'DATETIME', 'NULL');
 
   saveDB();
 }
@@ -47,17 +48,36 @@ function saveDB() {
   fs.writeFileSync(DB_PATH, Buffer.from(data));
 }
 
-// 전체 조회
-app.get('/api/todos', (req, res) => {
-  const results = db.exec('SELECT * FROM todos ORDER BY position ASC, created_at DESC');
-  if (results.length === 0) return res.json([]);
+// 결과를 객체 배열로 변환하는 헬퍼
+function rowsToObjects(results) {
+  if (results.length === 0) return [];
   const columns = results[0].columns;
-  const todos = results[0].values.map(row => {
+  return results[0].values.map(row => {
     const obj = {};
     columns.forEach((col, i) => obj[col] = row[i]);
     return obj;
   });
-  res.json(todos);
+}
+
+// 오늘 할 일: 미완료 전체 + 오늘 완료한 것
+app.get('/api/todos', (req, res) => {
+  const results = db.exec(`
+    SELECT * FROM todos
+    WHERE completed = 0
+       OR (completed = 1 AND date(completed_at) = date('now'))
+    ORDER BY position ASC, created_at DESC
+  `);
+  res.json(rowsToObjects(results));
+});
+
+// 완료됨 탭: 오늘 이전에 완료된 항목
+app.get('/api/todos/done', (req, res) => {
+  const results = db.exec(`
+    SELECT * FROM todos
+    WHERE completed = 1 AND date(completed_at) < date('now')
+    ORDER BY completed_at DESC
+  `);
+  res.json(rowsToObjects(results));
 });
 
 // 추가
@@ -79,7 +99,10 @@ app.post('/api/todos', (req, res) => {
 // 완료 토글
 app.patch('/api/todos/:id', (req, res) => {
   const { id } = req.params;
-  db.run('UPDATE todos SET completed = CASE WHEN completed = 0 THEN 1 ELSE 0 END WHERE id = ?', [Number(id)]);
+  db.run(`UPDATE todos SET
+    completed = CASE WHEN completed = 0 THEN 1 ELSE 0 END,
+    completed_at = CASE WHEN completed = 0 THEN datetime('now') ELSE NULL END
+    WHERE id = ?`, [Number(id)]);
   saveDB();
   const result = db.exec('SELECT * FROM todos WHERE id = ?', [Number(id)]);
   if (result.length === 0) return res.status(404).json({ error: '찾을 수 없습니다' });
