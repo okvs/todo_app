@@ -41,6 +41,7 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Private-Network', 'true')
             self.end_headers()
             if os.path.exists(DATA_FILE):
                 with open(DATA_FILE, 'r', encoding='utf-8') as f:
@@ -62,6 +63,7 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Private-Network', 'true')
             self.end_headers()
             self.wfile.write(json.dumps({'ok': True, 'count': len(parsed)}).encode('utf-8'))
             return
@@ -72,6 +74,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Private-Network', 'true')
         self.end_headers()
 
 
