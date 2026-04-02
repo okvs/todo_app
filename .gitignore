@@ -1,0 +1,10 @@
+node_modules/
+*.db
+.vite/
+package-lock.json
+
+# Electron 빌드 결과물
+/dist/
+
+# 프론트엔드 빌드는 포함 (bat/Electron에서 사용)
+!frontend/dist/
