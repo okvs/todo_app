@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎰 슬롯머신 추첨기</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(145deg, #0a1a1a, #0a2e2a, #0a1e2e);
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* ── 배경 효과 ── */
+        .bg-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-glow::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(255, 78, 80, 0.06) 0%, transparent 70%);
+            animation: bg-pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes bg-pulse {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.3);
+            }
+        }
+
+        .star {
+            position: fixed;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            animation: twinkle ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: 0.1;
+                transform: scale(0.8);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+
+        /* ── 레이아웃 ── */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, #ffd700, #ff6b35, #ff1744, #ffd700);
+            background-size: 300% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: title-glow 3s ease infinite;
+            margin-bottom: 4px;
+        }
+
+        @keyframes title-glow {
+
+            0%,
+            100% {
+                background-position: 0% center;
+            }
+
+            50% {
+                background-position: 300% center;
+            }
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+        }
+
+        /* ── 설정 패널 ── */
+        .setup-panel {
+            width: 100%;
+            max-width: 540px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 30px;
+            backdrop-filter: blur(16px);
+            margin-bottom: 30px;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .setup-panel.hidden {
+            opacity: 0;
+            transform: translateY(-30px) scale(0.95);
+            pointer-events: none;
+            height: 0;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            border: none;
+        }
+
+        .setup-panel label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.55);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .setup-panel textarea {
+            width: 100%;
+            height: 140px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 16px;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            resize: vertical;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border-color 0.3s;
+            line-height: 1.6;
+        }
+
+        .setup-panel textarea:focus {
+            border-color: rgba(255, 215, 0, 0.5);
+        }
+
+        .setup-panel textarea::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .setup-row {
+            display: flex;
+            gap: 14px;
+            align-items: flex-end;
+            margin-bottom: 16px;
+        }
+
+        .setup-field {
+            flex: 1;
+        }
+
+        .setup-field input[type="number"] {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 12px 16px;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+            -moz-appearance: textfield;
+        }
+
+        .setup-field input:focus {
+            border-color: rgba(255, 215, 0, 0.5);
+        }
+
+        .setup-field input::-webkit-inner-spin-button,
+        .setup-field input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+        }
+
+        .info-text {
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 22px;
+            line-height: 1.6;
+        }
+
+        /* ── 버튼 ── */
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg) translateY(-100%);
+            transition: transform 0.4s;
+        }
+
+        .btn:hover::after {
+            transform: rotate(45deg) translateY(100%);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ffd700, #ff6b35, #ff1744);
+            color: #fff;
+            box-shadow: 0 8px 30px rgba(255, 23, 68, 0.3), 0 0 60px rgba(255, 215, 0, 0.1);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(255, 23, 68, 0.45);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.07);
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* ── 슬롯머신 본체 ── */
+        .machine-wrapper {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .machine-wrapper.active {
+            display: flex;
+        }
+
+        .round-info {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.45);
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .slot-machine {
+            position: relative;
+            background: linear-gradient(180deg, #0f1f1f 0%, #122a2a 50%, #0f1f1f 100%);
+            border: 3px solid rgba(255, 215, 0, 0.3);
+            border-radius: 24px;
+            padding: 20px 30px;
+            box-shadow:
+                0 0 40px rgba(255, 215, 0, 0.08),
+                inset 0 0 60px rgba(0, 0, 0, 0.5),
+                0 20px 60px rgba(0, 0, 0, 0.5);
+            margin-bottom: 30px;
+        }
+
+        /* 상단 장식 */
+        .machine-top {
+            text-align: center;
+            margin-bottom: 16px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: rgba(255, 215, 0, 0.7);
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        /* 릴 컨테이너 */
+        .reels-container {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .reel-frame {
+            position: relative;
+            width: 120px;
+            height: 240px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+        }
+
+        /* 릴 상하 그라데이션 마스크 */
+        .reel-frame::before,
+        .reel-frame::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 35%;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .reel-frame::before {
+            top: 0;
+            background: linear-gradient(to bottom, rgba(15, 31, 31, 0.95), transparent);
+        }
+
+        .reel-frame::after {
+            bottom: 0;
+            background: linear-gradient(to top, rgba(15, 31, 31, 0.95), transparent);
+        }
+
+        /* 중앙 하이라이트 라인 */
+        .reel-highlight {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 72px;
+            z-index: 4;
+            transform: translateY(-50%);
+            border-top: 2px solid rgba(255, 215, 0, 0.4);
+            border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+            background: rgba(255, 215, 0, 0.04);
+            pointer-events: none;
+        }
+
+        /* 릴 트랙 (스크롤하는 부분) */
+        .reel-track {
+            position: absolute;
+            left: 0;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: none;
+        }
+
+        .reel-track.stopping {
+            transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.3, 1.05);
+        }
+
+        .reel-char {
+            width: 100%;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.6rem;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.5);
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .reel-char.center {
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        /* 릴 멈춤 상태 */
+        .reel-frame.stopped .reel-highlight {
+            border-color: rgba(255, 215, 0, 0.8);
+            background: rgba(255, 215, 0, 0.08);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+        }
+
+        .reel-frame.stopped .reel-char.center {
+            color: #ffd700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            animation: char-glow 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes char-glow {
+            0% {
+                text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+            }
+
+            100% {
+                text-shadow: 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 107, 53, 0.3);
+            }
+        }
+
+        /* 전체 멈춤 후 완성된 이름 */
+        .reel-frame.complete .reel-char.center {
+            color: #fff;
+            font-size: 2.8rem;
+            animation: winner-pulse 0.6s ease-in-out infinite alternate;
+        }
+
+        .reel-frame.complete .reel-highlight {
+            border-color: rgba(255, 23, 68, 0.8);
+            background: rgba(255, 23, 68, 0.1);
+            box-shadow: 0 0 30px rgba(255, 23, 68, 0.3);
+        }
+
+        @keyframes winner-pulse {
+            0% {
+                transform: scale(1);
+                text-shadow: 0 0 20px rgba(255, 23, 68, 0.5);
+            }
+
+            100% {
+                transform: scale(1.08);
+                text-shadow: 0 0 40px rgba(255, 23, 68, 0.8), 0 0 80px rgba(255, 215, 0, 0.4);
+            }
+        }
+
+        /* 당첨자 발표 텍스트 */
+        .winner-announce {
+            text-align: center;
+            margin-bottom: 24px;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .winner-announce.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .winner-announce .winner-label {
+            font-size: 0.85rem;
+            color: rgba(255, 215, 0, 0.6);
+            letter-spacing: 3px;
+            margin-bottom: 6px;
+        }
+
+        .winner-announce .winner-name {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, #ffd700, #ff6b35, #ff1744);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: none;
+            animation: name-shine 2s ease infinite;
+        }
+
+        @keyframes name-shine {
+
+            0%,
+            100% {
+                filter: brightness(1);
+            }
+
+            50% {
+                filter: brightness(1.3);
+            }
+        }
+
+        /* 결과 누적 표시 */
+        .results-area {
+            width: 100%;
+            max-width: 540px;
+            margin-bottom: 20px;
+        }
+
+        .results-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 2px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .results-list {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            min-height: 50px;
+        }
+
+        .result-chip {
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            position: relative;
+            opacity: 0;
+            transform: translateY(10px) scale(0.8);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .result-chip.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .result-chip:hover {
+            transform: translateY(-3px) scale(1.05);
+        }
+
+        /* 칩 색상 */
+        .chip-0 {
+            background: linear-gradient(135deg, #f9d423, #f5a623);
+            box-shadow: 0 4px 15px rgba(249, 212, 35, 0.3);
+        }
+
+        .chip-1 {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .chip-2 {
+            background: linear-gradient(135deg, #f5576c, #ff6b81);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        }
+
+        .chip-3 {
+            background: linear-gradient(135deg, #a8e063, #56ab2f);
+            box-shadow: 0 4px 15px rgba(86, 171, 47, 0.3);
+        }
+
+        .chip-4 {
+            background: linear-gradient(135deg, #c471f5, #fa71cd);
+            box-shadow: 0 4px 15px rgba(196, 113, 245, 0.3);
+        }
+
+        .chip-5 {
+            background: linear-gradient(135deg, #89f7fe, #66a6ff);
+            box-shadow: 0 4px 15px rgba(102, 166, 255, 0.3);
+        }
+
+        .chip-6 {
+            background: linear-gradient(135deg, #ffecd2, #fcb69f);
+            color: #333;
+            box-shadow: 0 4px 15px rgba(252, 182, 159, 0.3);
+        }
+
+        .chip-7 {
+            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+            box-shadow: 0 4px 15px rgba(161, 140, 209, 0.3);
+        }
+
+        /* 축하 효과 */
+        .confetti-box {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            top: -15px;
+            animation: conf-fall linear forwards;
+        }
+
+        @keyframes conf-fall {
+            0% {
+                transform: translateY(0) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(100vh) rotate(1080deg) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        /* 히스토리 */
+        .history-section {
+            margin-top: 30px;
+            width: 100%;
+            max-width: 540px;
+            display: none;
+        }
+
+        .history-section.show {
+            display: block;
+        }
+
+        .history-section h3 {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.78rem;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .history-entry {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            margin-bottom: 6px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            flex-wrap: wrap;
+            animation: h-in 0.4s ease;
+        }
+
+        @keyframes h-in {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .history-entry .h-chip {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .history-entry .h-round {
+            margin-left: auto;
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 0.75rem;
+        }
+
+        /* 반응형 */
+        @media (max-width: 500px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            .reel-frame {
+                width: 90px;
+                height: 200px;
+            }
+
+            .reel-char {
+                height: 60px;
+                font-size: 2rem;
+            }
+
+            .reel-highlight {
+                height: 60px;
+            }
+
+            .slot-machine {
+                padding: 16px 18px;
+            }
+
+            .winner-announce .winner-name {
+                font-size: 2.2rem;
+            }
+
+            .btn {
+                padding: 12px 28px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ══════ 디버그 패널 (문제 해결 후 삭제) ══════ -->
+    <div id="debugPanel" style="
+        position:fixed; top:0; left:0; right:0; z-index:9999;
+        background:rgba(0,0,0,0.92); color:#0f0; font-family:monospace;
+        font-size:12px; padding:10px 14px; max-height:40vh; overflow-y:auto;
+        border-bottom:2px solid #ff0; line-height:1.6;
+    ">
+        <strong style="color:#ff0;">[DEBUG] 보안 환경 진단 중...</strong><br>
+    </div>
+    <script>
+        // ── 디버그 유틸 (인라인 스크립트 실행 여부 자체가 첫 번째 테스트) ──
+        (function () {
+            var dp = document.getElementById('debugPanel');
+            function log(msg, color) {
+                var line = document.createElement('div');
+                line.style.color = color || '#0f0';
+                line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+                dp.appendChild(line);
+            }
+
+            // 1) 인라인 스크립트 실행 확인
+            log('✅ 인라인 <script> 실행 성공', '#0f0');
+
+            // 2) CSP 위반 감지
+            document.addEventListener('securitypolicyviolation', function (e) {
+                log('🚫 CSP 위반! 차단된 항목: ' + e.blockedURI, '#f44');
+                log('   위반 지시자: ' + e.violatedDirective, '#f88');
+                log('   원본 정책: ' + e.originalPolicy, '#f88');
+            });
+
+            // 3) 전역 에러 캡처
+            window.addEventListener('error', function (e) {
+                log('❌ JS 에러: ' + e.message + ' (line ' + e.lineno + ')', '#f44');
+            });
+
+            // 4) 외부 리소스 로드 확인 (Google Fonts)
+            var fontLink = document.querySelector('link[href*="googleapis"]');
+            if (fontLink) {
+                var img = new Image();
+                img.addEventListener('load', function () { log('✅ Google Fonts CDN 접근 가능', '#0f0'); });
+                img.addEventListener('error', function () { log('⚠️ Google Fonts CDN 차단됨 (폰트가 기본 폰트로 대체됨)', '#ff0'); });
+                img.src = 'https://fonts.googleapis.com/favicon.ico?' + Date.now();
+            }
+
+            // 5) DOM 로드 후 onclick 핸들러 점검
+            document.addEventListener('DOMContentLoaded', function () {
+                log('✅ DOMContentLoaded 발생', '#0f0');
+
+                // onclick 속성 바인딩 확인
+                var btns = document.querySelectorAll('[onclick]');
+                log('📋 onclick 속성이 있는 버튼 수: ' + btns.length, '#0ff');
+                btns.forEach(function (btn, i) {
+                    var handler = btn.getAttribute('onclick');
+                    log('   버튼 ' + i + ': "' + btn.textContent.trim() + '" → onclick="' + handler + '"', '#0ff');
+
+                    // 핸들러 함수가 실제로 존재하는지 확인
+                    var fnName = handler.replace(/\(.*/, '');
+                    if (typeof window[fnName] === 'function') {
+                        log('   ✅ ' + fnName + '() 함수 존재함', '#0f0');
+                    } else {
+                        log('   ❌ ' + fnName + '() 함수 없음! (스크립트 차단 가능성)', '#f44');
+                    }
+                });
+
+                // 6) 인라인 이벤트 핸들러 실행 가능 여부 테스트
+                try {
+                    var testBtn = document.createElement('button');
+                    testBtn.setAttribute('onclick', 'void(0)');
+                    testBtn.click();
+                    log('✅ 인라인 onclick 핸들러 실행 가능', '#0f0');
+                } catch (e) {
+                    log('❌ 인라인 onclick 실행 차단됨: ' + e.message, '#f44');
+                    log('💡 해결법: onclick 대신 addEventListener를 사용해야 합니다', '#ff0');
+                }
+
+                // 7) eval 차단 여부 (CSP script-src 관련)
+                try {
+                    eval('1+1');
+                    log('✅ eval() 허용됨', '#0f0');
+                } catch (e) {
+                    log('⚠️ eval() 차단됨 (CSP script-src에 unsafe-eval 없음)', '#ff0');
+                }
+
+                // 8) meta CSP 태그 확인
+                var cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+                if (cspMeta) {
+                    log('📋 페이지 내 CSP 메타 태그: ' + cspMeta.content, '#0ff');
+                }
+
+                // 9) 진단 요약
+                log('──────────────────────────────────', '#888');
+                log('진단 완료. 위 결과를 확인하세요.', '#ff0');
+                log('🚫가 있으면 CSP 차단, ❌가 있으면 기능 오류입니다.', '#ff0');
+                log('디버그 패널을 닫으려면 아래 [닫기] 버튼을 클릭하세요.', '#888');
+
+                var closeBtn = document.createElement('button');
+                closeBtn.textContent = '[디버그 패널 닫기]';
+                closeBtn.style.cssText = 'margin-top:8px;background:#333;color:#ff0;border:1px solid #ff0;padding:4px 12px;cursor:pointer;font-family:monospace;';
+                closeBtn.addEventListener('click', function () { dp.style.display = 'none'; });
+                dp.appendChild(closeBtn);
+            });
+        })();
+    </script>
+
+    <div class="bg-glow"></div>
+    <div class="confetti-box" id="confettiBox"></div>
+
+    <div class="container">
+        <h1>🎰 SLOT MACHINE</h1>
+        <p class="subtitle">행운의 당첨자를 뽑아보세요!</p>
+
+        <!-- ══════ 설정 패널 ══════ -->
+        <div class="setup-panel" id="setupPanel">
+            <label>👥 참가자 이름 (한 줄에 하나, 3글자)</label>
+            <textarea id="namesInput"
+                placeholder="예시:&#10;김철수&#10;이영희&#10;박지민&#10;최수진&#10;정민호&#10;한소희&#10;강동원&#10;송혜교"></textarea>
+
+            <div class="setup-row">
+                <div class="setup-field">
+                    <label>🎯 뽑을 인원</label>
+                    <input type="number" id="pickCount" value="1" min="1">
+                </div>
+            </div>
+            <p class="info-text">
+                💡 3글자 이름을 한 줄에 하나씩 입력해주세요.<br>
+                💡 글자 수가 다른 이름이 섞여 있으면 가장 긴 이름 기준으로 릴이 생성됩니다.
+            </p>
+            <div class="btn-group">
+                <button class="btn btn-primary" id="btnInit">🎰 추첨 시작!</button>
+            </div>
+        </div>
+
+        <!-- ══════ 슬롯머신 ══════ -->
+        <div class="machine-wrapper" id="machineWrapper">
+            <div class="round-info" id="roundInfo">1 / 1 번째 추첨</div>
+
+            <div class="slot-machine" id="slotMachine">
+                <div class="machine-top">★ LUCKY DRAW ★</div>
+                <div class="reels-container" id="reelsContainer">
+                    <!-- 릴 프레임들이 JS로 생성됨 -->
+                </div>
+            </div>
+
+            <div class="winner-announce" id="winnerAnnounce">
+                <div class="winner-label">🎉 당첨자 🎉</div>
+                <div class="winner-name" id="winnerName"></div>
+            </div>
+
+            <div class="results-area" id="resultsArea" style="display:none;">
+                <div class="results-label">✅ 당첨자 목록</div>
+                <div class="results-list" id="resultsList"></div>
+            </div>
+
+            <div class="btn-group" id="btnGroup" style="display:none;">
+                <button class="btn btn-primary" id="btnSpin">🎰 레버 당기기!</button>
+                <button class="btn btn-secondary" id="btnReset">↻ 처음으로</button>
+            </div>
+        </div>
+
+        <!-- ══════ 히스토리 ══════ -->
+        <div class="history-section" id="historySection">
+            <h3>📋 추첨 기록</h3>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        // ── 배경 별 생성 ──
+        (function () {
+            for (let i = 0; i < 40; i++) {
+                const s = document.createElement('div');
+                s.className = 'star';
+                s.style.width = s.style.height = (Math.random() * 3 + 1) + 'px';
+                s.style.left = Math.random() * 100 + '%';
+                s.style.top = Math.random() * 100 + '%';
+                s.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                s.style.animationDelay = (Math.random() * 5) + 's';
+                document.body.appendChild(s);
+            }
+        })();
+
+        // ── 상태 ──
+        let names = [];         // 전체 이름 배열
+        let remaining = [];     // 남은 후보
+        let picked = [];        // 뽑힌 목록
+        let pickTotal = 1;
+        let currentRound = 0;
+        let charLen = 3;        // 이름 글자 수
+        let spinning = false;
+        let historyNum = 0;
+
+        // ── 초기화 ──
+        function initSlot() {
+            const raw = document.getElementById('namesInput').value.trim();
+            pickTotal = parseInt(document.getElementById('pickCount').value) || 1;
+
+            if (!raw) {
+                alert('이름을 입력해주세요!');
+                return;
+            }
+
+            names = raw.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+
+            if (names.length < 2) {
+                alert('최소 2명 이상 입력해주세요!');
+                return;
+            }
+            if (pickTotal > names.length) {
+                alert('뽑을 인원(' + pickTotal + ')이 참가자 수(' + names.length + ')보다 많습니다!');
+                return;
+            }
+
+            // 최대 글자 수 계산
+            charLen = Math.max(...names.map(n => n.length));
+            // 짧은 이름은 공백으로 패딩 (표시용)
+            names = names.map(n => n.padEnd(charLen, ' '));
+
+            remaining = [...names];
+            picked = [];
+            currentRound = 0;
+
+            // UI 전환
+            document.getElementById('setupPanel').classList.add('hidden');
+            document.getElementById('machineWrapper').classList.add('active');
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('resultsList').innerHTML = '';
+            document.getElementById('winnerAnnounce').classList.remove('show');
+
+            buildReels();
+            updateRoundInfo();
+
+            document.getElementById('btnGroup').style.display = 'flex';
+            const btnSpin = document.getElementById('btnSpin');
+            btnSpin.style.display = 'inline-block';
+            btnSpin.textContent = '🎰 레버 당기기!';
+            btnSpin.disabled = false;
+            document.getElementById('btnReset').style.display = 'none';
+        }
+
+        function updateRoundInfo() {
+            document.getElementById('roundInfo').textContent =
+                (currentRound + 1) + ' / ' + pickTotal + ' 번째 추첨';
+        }
+
+        // ── 릴 생성 ──
+        function buildReels() {
+            const container = document.getElementById('reelsContainer');
+            container.innerHTML = '';
+
+            for (let i = 0; i < charLen; i++) {
+                const frame = document.createElement('div');
+                frame.className = 'reel-frame';
+                frame.id = 'reel-frame-' + i;
+
+                const highlight = document.createElement('div');
+                highlight.className = 'reel-highlight';
+                frame.appendChild(highlight);
+
+                const track = document.createElement('div');
+                track.className = 'reel-track';
+                track.id = 'reel-track-' + i;
+                frame.appendChild(track);
+
+                container.appendChild(frame);
+            }
+        }
+
+        // ── 릴 스핀 ──
+        function spinOnce() {
+            if (spinning) return;
+            spinning = true;
+
+            const btnSpin = document.getElementById('btnSpin');
+            btnSpin.disabled = true;
+            document.getElementById('winnerAnnounce').classList.remove('show');
+
+            // 당첨자 선정
+            const winnerIdx = Math.floor(Math.random() * remaining.length);
+            const winner = remaining[winnerIdx];
+            const winnerChars = winner.split('');
+
+            // 각 릴의 글자 풀 만들기
+            for (let col = 0; col < charLen; col++) {
+                const track = document.getElementById('reel-track-' + col);
+                const frame = document.getElementById('reel-frame-' + col);
+                track.innerHTML = '';
+                frame.classList.remove('stopped', 'complete');
+                track.classList.remove('stopping');
+                track.style.transition = 'none';
+                track.style.transform = 'translateY(0)';
+
+                // 해당 위치의 모든 글자들 + 약간의 랜덤 셔플
+                const pool = remaining.map(n => n[col]).filter(c => c && c.trim());
+                // 중복 제거 후 셔플
+                const unique = [...new Set(pool)];
+                const shuffled = shuffle([...unique]);
+
+                // 롱 리스트 만들기 (충분히 길게)
+                const longList = [];
+                const totalItems = 30 + col * 8; // 뒤 릴일수록 더 많이 돌림
+                for (let i = 0; i < totalItems; i++) {
+                    longList.push(shuffled[i % shuffled.length]);
+                }
+                // 마지막은 반드시 당첨 글자
+                longList.push(winnerChars[col]);
+                // 당첨 글자 뒤에 1~2개 더 (비주얼)
+                for (let i = 0; i < 2; i++) {
+                    longList.push(shuffled[i % shuffled.length]);
+                }
+
+                // DOM에 추가
+                longList.forEach((ch, idx) => {
+                    const el = document.createElement('div');
+                    el.className = 'reel-char';
+                    el.textContent = ch;
+                    track.appendChild(el);
+                });
+
+                // 초기 위치 세팅 (맨 위부터 보이게)
+                track.style.transform = 'translateY(0)';
+            }
+
+            // 스핀 애니메이션 시작
+            startSpinAnimation(winnerChars);
+        }
+
+        function startSpinAnimation(winnerChars) {
+            const charHeight = 72; // .reel-char 높이
+            const frameHeight = 240;
+            const centerOffset = (frameHeight / 2) - (charHeight / 2); // 중앙 정렬 오프셋
+
+            // 각 릴 스핀
+            for (let col = 0; col < charLen; col++) {
+                const track = document.getElementById('reel-track-' + col);
+                const frame = document.getElementById('reel-frame-' + col);
+                const items = track.querySelectorAll('.reel-char');
+
+                // 당첨 글자 위치 (마지막에서 3번째)
+                const targetIdx = items.length - 3;
+                const targetY = -(targetIdx * charHeight) + centerOffset;
+
+                // 빠른 스핀 효과 (requestAnimationFrame 기반)
+                let currentY = 0;
+                const speed = 8 + col * 2; // 릴마다 속도 차이
+                const startTime = performance.now();
+                const spinDuration = 1500 + col * 1200; // 1.5초, 2.7초, 3.9초... 에 멈춤
+                const totalDistance = Math.abs(targetY);
+                let animId;
+
+                function animate(now) {
+                    const elapsed = now - startTime;
+
+                    if (elapsed < spinDuration - 800) {
+                        // 빠르게 스크롤
+                        currentY -= speed;
+                        // 무한 루프 느낌 (되돌리기)
+                        const maxScroll = -(items.length * charHeight);
+                        if (currentY <= maxScroll + frameHeight) {
+                            currentY = 0;
+                        }
+                        track.style.transform = 'translateY(' + currentY + 'px)';
+                        animId = requestAnimationFrame(animate);
+                    } else {
+                        // 부드럽게 멈추기
+                        cancelAnimationFrame(animId);
+                        track.classList.add('stopping');
+                        track.style.transform = 'translateY(' + targetY + 'px)';
+
+                        // 멈춤 완료 후
+                        setTimeout(() => {
+                            frame.classList.add('stopped');
+                            // 중앙 글자 강조
+                            items[targetIdx].classList.add('center');
+
+                            // 효과음 대체: 시각 효과
+                            flashFrame(frame);
+
+                            // 마지막 릴이면 당첨자 발표
+                            if (col === charLen - 1) {
+                                setTimeout(() => announceWinner(winnerChars), 600);
+                            }
+                        }, 850); // CSS transition 시간과 맞춤
+                    }
+                }
+
+                // 약간의 딜레이로 순차 시작
+                setTimeout(() => {
+                    animId = requestAnimationFrame(animate);
+                }, col * 100);
+            }
+        }
+
+        function flashFrame(frame) {
+            frame.style.borderColor = 'rgba(255,215,0,0.8)';
+            frame.style.boxShadow = 'inset 0 0 30px rgba(255,215,0,0.15), 0 0 20px rgba(255,215,0,0.2)';
+            setTimeout(() => {
+                frame.style.borderColor = '';
+                frame.style.boxShadow = '';
+            }, 500);
+        }
+
+        // ── 당첨자 발표 ──
+        function announceWinner(winnerChars) {
+            const winnerName = winnerChars.join('').trim();
+
+            // 릴 complete 클래스 추가
+            for (let i = 0; i < charLen; i++) {
+                document.getElementById('reel-frame-' + i).classList.add('complete');
+            }
+
+            // 이름 표시
+            document.getElementById('winnerName').textContent = winnerName;
+            document.getElementById('winnerAnnounce').classList.add('show');
+
+            // 축하
+            launchConfetti();
+
+            // 결과에 추가
+            remaining = remaining.filter(n => n !== winnerChars.join(''));
+            picked.push(winnerName);
+            currentRound++;
+
+            // 결과 칩 추가
+            const rl = document.getElementById('resultsList');
+            const chip = document.createElement('div');
+            chip.className = 'result-chip chip-' + ((picked.length - 1) % 8);
+            chip.textContent = winnerName;
+            rl.appendChild(chip);
+            document.getElementById('resultsArea').style.display = 'block';
+            setTimeout(() => chip.classList.add('show'), 50);
+
+            // 버튼 상태
+            setTimeout(() => {
+                spinning = false;
+                const btnSpin = document.getElementById('btnSpin');
+
+                if (currentRound < pickTotal) {
+                    btnSpin.disabled = false;
+                    btnSpin.textContent = '🎰 ' + (currentRound + 1) + '번째 추첨!';
+                    updateRoundInfo();
+                } else {
+                    // 전부 완료
+                    btnSpin.style.display = 'none';
+                    document.getElementById('btnReset').style.display = 'inline-block';
+                    historyNum++;
+                    addHistory(picked);
+                    // 더블 축하
+                    setTimeout(() => launchConfetti(), 400);
+                }
+            }, 800);
+        }
+
+        // ── 유틸 ──
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // ── 축하 효과 ──
+        function launchConfetti() {
+            const box = document.getElementById('confettiBox');
+            const colors = ['#ffd700', '#ff1744', '#ff6b35', '#4facfe', '#a8e063', '#c471f5', '#00f2fe', '#f5576c'];
+            for (let i = 0; i < 70; i++) {
+                const p = document.createElement('div');
+                p.className = 'confetti-piece';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.background = colors[Math.floor(Math.random() * colors.length)];
+                const size = Math.random() * 8 + 4;
+                p.style.width = size + 'px';
+                p.style.height = (Math.random() > 0.5 ? size : size * 2.5) + 'px';
+                p.style.borderRadius = Math.random() > 0.4 ? '50%' : '2px';
+                p.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+                p.style.animationDelay = (Math.random() * 0.8) + 's';
+                box.appendChild(p);
+            }
+            setTimeout(() => { box.innerHTML = ''; }, 4500);
+        }
+
+        // ── 히스토리 ──
+        function addHistory(items) {
+            const section = document.getElementById('historySection');
+            section.classList.add('show');
+            const list = document.getElementById('historyList');
+
+            const entry = document.createElement('div');
+            entry.className = 'history-entry';
+
+            items.forEach((name, i) => {
+                const chip = document.createElement('span');
+                chip.className = 'h-chip chip-' + (i % 8);
+                chip.textContent = name;
+                entry.appendChild(chip);
+            });
+
+            const rnd = document.createElement('span');
+            rnd.className = 'h-round';
+            rnd.textContent = '#' + historyNum;
+            entry.appendChild(rnd);
+
+            list.insertBefore(entry, list.firstChild);
+        }
+
+        // ── 리셋 ──
+        function resetAll() {
+            document.getElementById('machineWrapper').classList.remove('active');
+            document.getElementById('setupPanel').classList.remove('hidden');
+            document.getElementById('reelsContainer').innerHTML = '';
+            document.getElementById('winnerAnnounce').classList.remove('show');
+            document.getElementById('btnGroup').style.display = 'none';
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('resultsList').innerHTML = '';
+            spinning = false;
+        }
+
+        // ── 이벤트 바인딩 ──
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btnInit').addEventListener('click', initSlot);
+            document.getElementById('btnSpin').addEventListener('click', spinOnce);
+            document.getElementById('btnReset').addEventListener('click', resetAll);
+        });
+    </script>
+</body>
+
+</html>
