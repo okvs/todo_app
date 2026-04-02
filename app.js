@@ -100,17 +100,10 @@
   // 데이터 저장
   function saveData() {
     data = getTableData();
-
-    if (isFileProtocol) {
-      saveToLocal();
-      renderSummary();
-      renderChart();
-      showToast('로컬에 저장되었습니다.');
-      return;
-    }
+    const apiUrl = isFileProtocol ? 'http://localhost:8080/api/data' : '/api/data';
 
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/data', true);
+    xhr.open('POST', apiUrl, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onload = function () {
       if (xhr.status === 200) {
@@ -121,14 +114,14 @@
         saveToLocal();
         renderSummary();
         renderChart();
-        showToast('로컬에 저장되었습니다. (서버 미연결)');
+        showToast('서버 오류 - 로컬에 임시 저장되었습니다.');
       }
     };
     xhr.onerror = function () {
       saveToLocal();
       renderSummary();
       renderChart();
-      showToast('로컬에 저장되었습니다. (서버 미연결)');
+      showToast('서버 연결 실패 - 로컬에 임시 저장되었습니다.');
     };
     xhr.send(JSON.stringify(data));
   }
@@ -240,14 +233,10 @@
 
   // 초기화
   function init() {
-    if (isFileProtocol) {
-      data = loadFromLocal();
-      loadRows();
-      return;
-    }
+    const apiUrl = isFileProtocol ? 'http://localhost:8080/api/data' : '/api/data';
 
     const xhr = new XMLHttpRequest();
-    xhr.open('GET', '/api/data', true);
+    xhr.open('GET', apiUrl, true);
     xhr.onload = function () {
       if (xhr.status === 200) {
         try { data = JSON.parse(xhr.responseText); } catch (e) { data = []; }
